@@ -1,0 +1,295 @@
+A)
+#include <stdio.h>
+#include <stdlib.h>
+#include <dirent.h>
+#include <string.h>
+
+int main(int argc, char *argv[]) {
+    DIR *dir;
+    struct dirent *ent;
+    char *prefix = argv[1];
+
+    if (argc != 2) {
+        fprintf(stderr, "Usage: %s prefix\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
+
+    if ((dir = opendir(".")) != NULL) {
+        while ((ent = readdir(dir)) != NULL) {
+            if (strncmp(prefix, ent->d_name, strlen(prefix)) == 0) {
+                printf("%s\n", ent->d_name);
+            }
+        }
+        closedir(dir);
+    } else {
+        perror("");
+        exit(EXIT_FAILURE);
+    }
+
+    return 0;
+}
+
+
+B)
+#include <stdio.h>
+#include <setjmp.h>
+
+static jmp_buf buf;
+
+void automatic_variables() {
+    int x = 1;
+    printf("Automatic variable: %d\n", x);
+    x++;
+    printf("Automatic variable after increment: %d\n", x);
+}
+
+int global_variable = 1;
+
+void global_variables() {
+    printf("Global variable: %d\n", global_variable);
+    global_variable++;
+    printf("Global variable after increment: %d\n", global_variable);
+}
+
+void register_variables() {
+    register int x = 1;
+    printf("Register variable: %d\n", x);
+    x++;
+    printf("Register variable after increment: %d\n", x);
+}
+
+void static_variables() {
+    static int x = 1;
+    printf("Static variable: %d\n", x);
+    x++;
+    printf("Static variable after increment: %d\n", x);
+}
+
+void volatile_variables() {
+    volatile int x = 1;
+    printf("Volatile variable: %d\n", x);
+    x++;
+    printf("Volatile variable after increment: %d\n", x);
+}
+
+int main() {
+    if (setjmp(buf) == 0) {
+        // This is the first time we run the program
+        printf("First time through\n");
+        automatic_variables();
+        global_variables();
+        register_variables();
+        static_variables();
+        volatile_variables();
+        longjmp(buf, 1);
+    } else {
+        // This is the second time we run the program (after longjmp)
+        printf("\nSecond time through\n");
+        automatic_variables();
+        global_variables();
+        register_variables();
+        static_variables();
+        volatile_variables();
+    }
+    return 0;
+}
+
+
+A)
+$$ activity_main.xml:
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp"
+    tools:context=".MainActivity">
+
+    <Button
+        android:id="@+id/btn_change_color"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Change Color"
+        android:layout_marginBottom="16dp"
+        android:onClick="changeColor"/>
+
+    <Button
+        android:id="@+id/btn_change_font_size"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Change Font Size"
+        android:layout_below="@id/btn_change_color"
+        android:onClick="changeFontSize"/>
+
+    <TextView
+        android:id="@+id/text_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Hello, Android!"
+        android:layout_centerInParent="true"/>
+
+</RelativeLayout>
+
+$$MainActivity.java:
+
+import android.graphics.Color;
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.TextView;
+
+public class MainActivity extends AppCompatActivity {
+
+    private TextView textView;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        textView = findViewById(R.id.text_view);
+    }
+
+    public void changeColor(View view) {
+        int color = Color.parseColor("#FF0000"); // Change to the desired color
+        textView.setBackgroundColor(color);
+    }
+
+    public void changeFontSize(View view) {
+        float fontSize = 24; // Change to the desired font size
+        textView.setTextSize(fontSize);
+    }
+}
+
+
+B)
+
+$$ activity_main.xml:
+
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp"
+    tools:context=".MainActivity">
+
+    <Button
+        android:id="@+id/btn_date_picker"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Show Date Picker"
+        android:layout_marginBottom="16dp"
+        android:onClick="showDatePicker"/>
+
+    <Button
+        android:id="@+id/btn_time_picker"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/btn_date_picker"
+        android:layout_marginTop="131dp"
+        android:onClick="showTimePicker"
+        android:text="Show Time Picker" />
+
+    <TextView
+        android:id="@+id/tv_date"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/btn_time_picker"
+        android:layout_marginTop="46dp"
+        android:text="Selected Date: " />
+
+    <TextView
+        android:id="@+id/tv_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/tv_date"
+        android:layout_marginTop="60dp"
+        android:text="Selected Time: " />
+
+</RelativeLayout>
+
+
+$$MainActivity.java:
+
+package com.example.programs;
+
+import android.app.DatePickerDialog;
+import android.app.TimePickerDialog;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.DatePicker;
+import android.widget.TextView;
+import android.widget.TimePicker;
+import androidx.appcompat.app.AppCompatActivity;
+import java.util.Calendar;
+
+public class MainActivity extends AppCompatActivity {
+
+    private TextView tvDate;
+    private TextView tvTime;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        tvDate = findViewById(R.id.tv_date);
+        tvTime = findViewById(R.id.tv_time);
+    }
+
+    public void showDatePicker(View view) {
+        // Get current date
+        Calendar calendar = Calendar.getInstance();
+        int year = calendar.get(Calendar.YEAR);
+        int month = calendar.get(Calendar.MONTH);
+        int day = calendar.get(Calendar.DAY_OF_MONTH);
+
+        // Create a date picker dialog
+        DatePickerDialog datePickerDialog = new DatePickerDialog(
+                this,
+                new DatePickerDialog.OnDateSetListener() {
+                    @Override
+                    public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
+                        String selectedDate = dayOfMonth + "/" + (month + 1) + "/" + year;
+                        tvDate.setText("Selected Date: " + selectedDate);
+                    }
+                },
+                year,
+                month,
+                day
+        );
+
+        // Show the date picker dialog
+        datePickerDialog.show();
+    }
+
+    public void showTimePicker(View view) {
+        // Get current time
+        Calendar calendar = Calendar.getInstance();
+        int hour = calendar.get(Calendar.HOUR_OF_DAY);
+        int minute = calendar.get(Calendar.MINUTE);
+
+        // Create a time picker dialog
+        TimePickerDialog timePickerDialog = new TimePickerDialog(
+                this,
+                new TimePickerDialog.OnTimeSetListener() {
+                    @Override
+                    public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+                        String selectedTime = hourOfDay + ":" + minute;
+                        tvTime.setText("Selected Time: " + selectedTime);
+                    }
+                },
+                hour,
+                minute,
+                false
+        );
+
+        // Show the time picker dialog
+        timePickerDialog.show();
+    }
+}
+
+
+
+

@@ -1,0 +1,451 @@
+
+A)
+#include <stdio.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <time.h>
+
+int main(int argc, char *argv[]) {
+    // Check if a file path is provided
+    if (argc != 2) {
+        printf("Usage: %s <file path>\n", argv[0]);
+        return 1;
+    }
+
+    // Declare a stat structure
+    struct stat st;
+
+    // Call stat to get the file properties
+    if (stat(argv[1], &st) != 0) {
+        perror("stat");
+        return 1;
+    }
+
+    // Print the file properties
+    printf("File inode number: %ld\n", st.st_ino);
+    printf("Number of hard links: %ld\n", st.st_nlink);
+    printf("File permissions: ");
+    printf((S_ISDIR(st.st_mode)) ? "d" : "-");
+    printf((st.st_mode & S_IRUSR) ? "r" : "-");
+    printf((st.st_mode & S_IWUSR) ? "w" : "-");
+    printf((st.st_mode & S_IXUSR) ? "x" : "-");
+    printf((st.st_mode & S_IRGRP) ? "r" : "-");
+    printf((st.st_mode & S_IWGRP) ? "w" : "-");
+    printf((st.st_mode & S_IXGRP) ? "x" : "-");
+    printf((st.st_mode & S_IROTH) ? "r" : "-");
+    printf((st.st_mode & S_IWOTH) ? "w" : "-");
+    printf((st.st_mode & S_IXOTH) ? "x" : "-");
+    printf("\n");
+    printf("File size: %ld bytes\n", st.st_size);
+    printf("File access time: %s", ctime(&st.st_atime));
+    printf("File modification time: %s", ctime(&st.st_mtime));
+    return 0;
+}
+
+
+
+B)
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+#include <unistd.h>
+
+#define MAX_CHILDREN 10
+
+int main(int argc, char *argv[]) {
+    int n;
+    pid_t pid[MAX_CHILDREN];
+    struct rusage ru;
+    struct timeval user_time = {0, 0};
+    struct timeval kernel_time = {0, 0};
+
+    if (argc != 2) {
+        printf("Usage: %s n\n", argv[0]);
+        return 1;
+    }
+
+    n = atoi(argv[1]);
+
+    for (int i = 0; i < n; i++) {
+        pid[i] = fork();
+
+        if (pid[i] < 0) {
+            printf("Fork error\n");
+            return 1;
+        } else if (pid[i] == 0) {
+            sleep(1);
+            exit(0);
+        }
+    }
+
+    for (int i = 0; i < n; i++) {
+        int status;
+
+        if (waitpid(pid[i], &status, 0) == -1) {
+            printf("Waitpid error\n");
+            return 1;
+        }
+
+        if (getrusage(RUSAGE_CHILDREN, &ru) == -1) {
+            printf("Getrusage error\n");
+            return 1;
+        }
+
+        user_time.tv_sec += ru.ru_utime.tv_sec;
+        user_time.tv_usec += ru.ru_utime.tv_usec;
+        kernel_time.tv_sec += ru.ru_stime.tv_sec;
+        kernel_time.tv_usec += ru.ru_stime.tv_usec;
+    }
+
+    user_time.tv_sec += user_time.tv_usec / 1000000;
+    user_time.tv_usec %= 1000000;
+    kernel_time.tv_sec += kernel_time.tv_usec / 1000000;
+    kernel_time.tv_usec %= 1000000;
+
+    printf("User time: %ld.%06ld s\n", user_time.tv_sec, user_time.tv_usec);
+    printf("Kernel time: %ld.%06ld s\n", kernel_time.tv_sec, kernel_time.tv_usec);
+
+    return 0;
+}
+
+
+
+
+
+A)  
+
+Activity_main.xml
+<?xml version="1.0" encoding="utf-8"?>
+<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+ xmlns:app="http://schemas.android.com/apk/res-auto"
+ xmlns:tools="http://schemas.android.com/tools"
+ android:layout_width="match_parent"
+ android:layout_height="match_parent"
+ tools:context=".MainActivity">
+ <TableRow>
+ <TextView
+ android:id="@+id/n1"
+ android:layout_width="match_parent"
+ android:layout_height="wrap_content"
+ android:textSize="25dp"
+ android:text="Number1" />
+ <EditText
+ android:id="@+id/num1"
+ android:layout_width="wrap_content"
+ android:layout_height="wrap_content"
+ android:ems="15"
+ android:hint="num1"/>
+ </TableRow>
+ <TableRow>
+ <TextView
+ android:id="@+id/N2"
+
+ android:layout_width="wrap_content"
+ android:layout_height="wrap_content"
+ android:text="Number2"
+ android:textSize="25dp"
+ tools:layout_editor_absoluteX="49dp"
+ tools:layout_editor_absoluteY="134dp" />
+ <EditText
+ android:id="@+id/num2"
+ android:layout_width="wrap_content"
+ android:layout_height="wrap_content"
+ android:hint="num2"
+ android:ems="10"/>
+ </TableRow>
+ <TableRow>
+ <Button
+ android:id="@+id/b1"
+ android:layout_width="wrap_content"
+ android:layout_height="wrap_content"
+ android:text="Power"
+ android:layout_gravity="center"
+ tools:layout_editor_absoluteX="138dp"
+ tools:layout_editor_absoluteY="257dp" />
+ <Button
+ android:id="@+id/b2"
+ android:layout_width="wrap_content"
+ android:layout_height="wrap_content"
+ android:text="Average"
+ android:layout_gravity="center"
+ tools:layout_editor_absoluteX="138dp"
+ tools:layout_editor_absoluteY="257dp" />
+ </TableRow>
+
+</TableLayout>
+MainActivty.java
+package com.example.mypoweravg;
+import androidx.appcompat.app.AppCompatActivity;
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+public class MainActivity extends AppCompatActivity {
+ EditText num1, num2;
+ Button b1, b2;
+ @Override
+ protected void onCreate(Bundle savedInstanceState) {
+ super.onCreate(savedInstanceState);
+ setContentView(R.layout.activity_main);
+ b1 = (Button) findViewById(R.id.b1);
+ b2 = (Button) findViewById(R.id.b2);
+ b1.setOnClickListener(new View.OnClickListener() {
+ @Override
+ public void onClick(View view) {
+ try {
+ num1 = (EditText) findViewById(R.id.num1);
+ num2 = (EditText) findViewById(R.id.num2);
+ int n1 = Integer.parseInt(num1.getText().toString());
+ int n2 = Integer.parseInt((num2.getText().toString()));
+ int result = (int) Math.pow(n1, n2);
+ Intent i = new Intent(getApplicationContext(), MainActivity2.class);
+ i.putExtra("text", "Power=");
+
+ i.putExtra("result", result);
+ startActivity(i);
+ } catch (NumberFormatException ne) {
+ Log.e("Error", "Error");
+ }
+ }
+ });
+ b2.setOnClickListener(new View.OnClickListener() {
+ @Override
+ public void onClick(View view) {
+ try {
+ num1 = (EditText) findViewById(R.id.num1);
+ num2 = (EditText) findViewById(R.id.num2);
+ int n1 = Integer.parseInt(num1.getText().toString());
+ int n2 = Integer.parseInt((num2.getText().toString()));
+ double result = (n1 + n2) / 2;
+ Intent i = new Intent(getApplicationContext(), MainActivity2.class);
+ i.putExtra("text", "Average=");
+ i.putExtra("result", result);
+ startActivity(i);
+ } catch (NumberFormatException ne) {
+ Log.e("Error", "Error");
+ }
+ }
+ });
+ }
+}
+Activty_main2.xml
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+ xmlns:app="http://schemas.android.com/apk/res-auto"
+ xmlns:tools="http://schemas.android.com/tools"
+ android:layout_width="match_parent"
+ android:layout_height="match_parent"
+ tools:context=".MainActivity2">
+
+ <TextView
+ android:layout_width="wrap_content"
+ android:layout_height="wrap_content"
+ android:id="@+id/tv" />
+</LinearLayout>
+MainActivity2.java
+package com.example.mypoweravg;
+import androidx.appcompat.app.AppCompatActivity;
+import android.content.Intent;
+import android.os.Bundle;
+import android.widget.TextView;
+public class MainActivity2 extends AppCompatActivity {
+ TextView tv;
+ @Override
+ protected void onCreate(Bundle savedInstanceState) {
+ super.onCreate(savedInstanceState);
+ setContentView(R.layout.activity_main2);
+ tv = (TextView) findViewById(R.id.tv);
+ Intent i = getIntent();
+ Bundle extras = i.getExtras();
+ String res = extras.getString("text");
+ if(res.equals("Power=")){
+ res+= extras.getInt("result");
+ tv.setText(res);
+ }
+ else{
+ res+=extras.getDouble("result");
+ tv.setText(res);
+ }
+ }
+} 
+
+B)
+
+$$activity_main.xml
+
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <TextView
+        android:id="@+id/textView1"
+        android:layout_width="119dp"
+        android:layout_height="46dp"
+        android:text="Enter String :"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.109"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.084" />
+
+    <EditText
+        android:id="@+id/input"
+        android:layout_width="241dp"
+        android:layout_height="45dp"
+        android:ems="10"
+        android:inputType="textPersonName"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.906"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.083" />
+
+    <RadioGroup
+        android:id="@+id/radioGroup"
+        android:layout_width="324dp"
+        android:layout_height="331dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.352">
+
+        <RadioButton
+            android:id="@+id/upcase"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:text="Uppercase"
+            android:textSize="14sp" />
+
+        <RadioButton
+            android:id="@+id/locase"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:text="Lowercase"
+            android:textSize="16sp" />
+
+        <RadioButton
+            android:id="@+id/rchar"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:text="Right 5 Character"
+            android:textSize="16sp" />
+
+        <RadioButton
+            android:id="@+id/lchar"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:text="Left 5 Charater"
+            android:textSize="16sp" />
+    </RadioGroup>
+
+    <Button
+        android:id="@+id/check"
+        android:layout_width="175dp"
+        android:layout_height="60dp"
+        android:onClick="check"
+        android:text="Check"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.732" />
+
+    <TextView
+        android:id="@+id/output"
+        android:layout_width="241dp"
+        android:layout_height="45dp"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.906"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.86" />
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="119dp"
+        android:layout_height="46dp"
+        android:text="Output :"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.109"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.862" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+
+$$MainActivity.java
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.RadioButton;
+import android.widget.TextView;
+
+public class MainActivity extends AppCompatActivity {
+    EditText input;
+    TextView textView1,textView2,output;
+    Button check;
+    RadioButton upcase,locase,rchar,lchar;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        textView1 = findViewById(R.id.textView1);
+        textView2 = findViewById(R.id.textView2);
+        input = findViewById(R.id.input);
+        output = findViewById(R.id.output);
+        check = findViewById(R.id.check);
+        upcase = findViewById(R.id.upcase);
+        locase = findViewById(R.id.locase);
+        rchar = findViewById(R.id.rchar);
+        lchar = findViewById(R.id.lchar);
+    }
+    public void check(View view){
+        if(upcase.isChecked()){
+            String inp = input.getText().toString();
+            String ans = inp.toUpperCase();
+            output.setText(ans);
+        } else if (locase.isChecked()) {
+            String inp = input.getText().toString();
+            String ans = inp.toLowerCase();
+            output.setText(ans);
+        } else if (rchar.isChecked()) {
+            String inp = input.getText().toString();
+            String ans = inp.substring( inp.length() - 5);
+            output.setText(ans);
+        } else if (lchar.isChecked()) {
+            String inp = input.getText().toString();
+            String ans = inp.substring( 0 , 5);
+            output.setText(ans);
+        }
+    }
+}
+
+
+
+

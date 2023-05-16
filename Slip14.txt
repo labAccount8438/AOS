@@ -1,0 +1,359 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+#define MSGSIZE 80
+
+int main() {
+    int fd[2], nbytes;
+    char msg1[MSGSIZE] = "Hello World";
+    char msg2[MSGSIZE] = "Hello SPPU";
+    char msg3[MSGSIZE] = "Linux is Funny";
+    char readbuffer[MSGSIZE];
+
+    if (pipe(fd) == -1) {
+        perror("pipe");
+        exit(1);
+    }
+
+    int pid = fork();
+
+    if (pid < 0) {
+        perror("fork");
+        exit(1);
+    }
+
+    if (pid == 0) { /* child process */
+        close(fd[0]);
+        write(fd[1], msg1, MSGSIZE);
+        write(fd[1], msg2, MSGSIZE);
+        write(fd[1], msg3, MSGSIZE);
+        exit(0);
+    } else { /* parent process */
+        close(fd[1]);
+        for (int i = 0; i < 3; i++) {
+            nbytes = read(fd[0], readbuffer, MSGSIZE);
+            printf("Received message %d: %s\n", i+1, readbuffer);
+        }
+    }
+
+    return 0;
+}
+
+
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+#define MAX_CMD_LEN 100
+#define MAX_PATTERN_LEN 100
+#define MAX_FILENAME_LEN 100
+
+void search(char *pattern, char *filename, char option) {
+    FILE *fp;
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t read;
+    int count = 0;
+    int line_num = 1;
+
+    fp = fopen(filename, "r");
+    if (fp == NULL) {
+        printf("Error opening file.\n");
+        return;
+    }
+
+    while ((read = getline(&line, &len, fp)) != -1) {
+        if (strstr(line, pattern) != NULL) {
+            if (option == 'f') {
+                printf("Pattern found in line %d: %s", line_num, line);
+                break;
+            }
+            else if (option == 'c') {
+                count++;
+            }
+            else if (option == 'a') {
+                printf("Pattern found in line %d: %s", line_num, line);
+            }
+        }
+        line_num++;
+    }
+
+    if (option == 'c') {
+        printf("Pattern occurred %d times in %s.\n", count, filename);
+    }
+
+    fclose(fp);
+    if (line) {
+        free(line);
+    }
+}
+
+int main() {
+    char cmd[MAX_CMD_LEN];
+    char pattern[MAX_PATTERN_LEN];
+    char filename[MAX_FILENAME_LEN];
+    char option;
+    pid_t pid;
+    int status;
+
+    while (1) {
+        printf("NewShell$ ");
+        fgets(cmd, MAX_CMD_LEN, stdin);
+        cmd[strcspn(cmd, "\n")] = 0; // Remove trailing newline
+
+        if (strcmp(cmd, "exit") == 0) {
+            break;
+        }
+
+        if (strncmp(cmd, "search", 6) == 0) {
+            option = cmd[7];
+            strncpy(pattern, &cmd[8], MAX_PATTERN_LEN);
+            strncpy(filename, &cmd[8 + strlen(pattern)], MAX_FILENAME_LEN);
+            search(pattern, filename, option);
+        }
+        else {
+            pid = fork();
+            if (pid == 0) {
+                execlp(cmd, cmd, NULL);
+                printf("Command not found.\n");
+                exit(EXIT_FAILURE);
+            }
+            else if (pid > 0) {
+                wait(&status);
+            }
+            else {
+                printf("Fork failed.\n");
+            }
+        }
+    }
+
+    return 0;
+}
+
+
+
+
+a)Construct an Android app that toggles a light bulb on and off when the user clicks on toggle button
+
+
+import android.os.Bundle;
+import android.view.View;
+import android.widget.CompoundButton;
+import android.widget.ImageView;
+import android.widget.ToggleButton;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+public class MainActivity extends AppCompatActivity {
+    private ImageView lightBulbImage;
+    private ToggleButton toggleButton;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        lightBulbImage = findViewById(R.id.light_bulb_image);
+        toggleButton = findViewById(R.id.toggle_button);
+
+        toggleButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    lightBulbImage.setImageResource(R.drawable.ic_light_on);
+                } else {
+                    lightBulbImage.setImageResource(R.drawable.ic_light_off);
+                }
+            }
+        });
+    }
+}
+
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <ImageView
+        android:id="@+id/light_bulb_image"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_centerInParent="true"
+        android:src="@drawable/ic_light_off" />
+
+    <ToggleButton
+        android:id="@+id/toggle_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/light_bulb_image"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="16dp"
+        android:textOff="OFF"
+        android:textOn="ON" />
+
+</RelativeLayout>
+
+
+
+b)Construct an Android application to accept a number and calculate Armstrong and Perfect number of
+a given number using Menu.
+
+
+
+
+import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+public class MainActivity extends AppCompatActivity {
+    private EditText numberEditText;
+    private TextView resultTextView;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        numberEditText = findViewById(R.id.number_edittext);
+        resultTextView = findViewById(R.id.result_textview);
+
+        Button calculateButton = findViewById(R.id.calculate_button);
+        calculateButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                calculate();
+            }
+        });
+    }
+
+    private void calculate() {
+        String numberString = numberEditText.getText().toString().trim();
+
+        if (numberString.isEmpty()) {
+            Toast.makeText(this, "Please enter a number", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        int number = Integer.parseInt(numberString);
+
+        if (number < 0) {
+            Toast.makeText(this, "Please enter a positive number", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        boolean isArmstrong = isArmstrongNumber(number);
+        boolean isPerfect = isPerfectNumber(number);
+
+        String result = "Number: " + number + "\n" +
+                "Armstrong: " + (isArmstrong ? "Yes" : "No") + "\n" +
+                "Perfect: " + (isPerfect ? "Yes" : "No");
+
+        resultTextView.setText(result);
+    }
+
+    private boolean isArmstrongNumber(int number) {
+        int originalNumber = number;
+        int sum = 0;
+
+        while (number > 0) {
+            int digit = number % 10;
+            sum += Math.pow(digit, 3);
+            number /= 10;
+        }
+
+        return originalNumber == sum;
+    }
+
+    private boolean isPerfectNumber(int number) {
+        int sum = 0;
+
+        for (int i = 1; i < number; i++) {
+            if (number % i == 0) {
+                sum += i;
+            }
+        }
+
+        return sum == number;
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.action_reset) {
+            numberEditText.setText("");
+            resultTextView.setText("");
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+}
+
+
+
+Make sure to create a menu resource file named menu_main.xml in the res/menu directory with the following contents:
+
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/action_reset"
+        android:icon="@android:drawable/ic_menu_close_clear_cancel"
+        android:title="Reset"
+        android:showAsAction="always" />
+</menu>
+
+
+
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    tools:context=".MainActivity">
+
+    <EditText
+        android:id="@+id/number_edittext"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inputType="number"
+        android:hint="Enter a number" />
+
+    <Button
+        android:id="@+id/calculate_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Calculate" />
+
+    <TextView
+        android:id="@+id/result_textview"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+</LinearLayout>
+

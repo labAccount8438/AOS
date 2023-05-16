@@ -1,0 +1,382 @@
+A)
+
+#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    char source_file_name[] = "file1.txt";
+    char destination_file_name[] = "file2.txt";
+
+    // Open source file
+    FILE *source_file = fopen(source_file_name, "r");
+    if (source_file == NULL) {
+        perror("Error");
+        exit(EXIT_FAILURE);
+    }
+
+    // Create destination file
+    FILE *destination_file = fopen(destination_file_name, "w");
+    if (destination_file == NULL) {
+        perror("Error");
+        exit(EXIT_FAILURE);
+    }
+
+    // Copy content from source to destination
+    int c;
+    while ((c = fgetc(source_file)) != EOF) {
+        fputc(c, destination_file);
+    }
+
+    // Close files
+    fclose(source_file);
+    fclose(destination_file);
+
+    // Remove source file
+    if (remove(source_file_name) == -1) {
+        perror("Error");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Content of %s is moved to %s and %s is removed\n", source_file_name, destination_file_name, source_file_name);
+
+    return 0;
+}
+
+
+B)
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/wait.h>
+
+void death_of_child_handler(int sig) {
+    int status;
+    pid_t pid;
+
+    while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
+        printf("Child process with PID %d has terminated\n", pid);
+    }
+}
+
+void alarm_handler(int sig) {
+    printf("Timeout: child process is taking too long to complete its execution\n");
+    exit(EXIT_FAILURE);
+}
+
+int main() {
+    pid_t pid;
+    int status;
+
+    // Set signal handler for death of child signal
+    struct sigaction sa;
+    sa.sa_handler = death_of_child_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    sigaction(SIGCHLD, &sa, NULL);
+
+    // Set signal handler for alarm signal
+    signal(SIGALRM, alarm_handler);
+
+    // Fork child process
+    pid = fork();
+    if (pid == -1) {
+        perror("Error");
+        exit(EXIT_FAILURE);
+    } else if (pid == 0) {
+        // Child process
+        char *command[] = {"ls", "-l", NULL};
+        execvp(command[0], command);
+        perror("Error");
+        exit(EXIT_FAILURE);
+    } else {
+        // Parent process
+        // Wait for child process to complete its execution
+        alarm(5);
+        wait(&status);
+        alarm(0);
+
+        if (WIFEXITED(status)) {
+            printf("Child process has terminated normally with status %d\n", WEXITSTATUS(status));
+        } else if (WIFSIGNALED(status)) {
+            printf("Child process was terminated by signal %d\n", WTERMSIG(status));
+        }
+    }
+
+    return 0;
+}
+
+
+
+
+A)Create an Android application that will change color of the screen and change the font size of text
+view using xml.
+
+import android.graphics.Color;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+public class MainActivity extends AppCompatActivity {
+    private RelativeLayout mainLayout;
+    private TextView textView;
+    private int colorIndex = 0;
+    private int[] colors = {Color.RED, Color.GREEN, Color.BLUE};
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        mainLayout = findViewById(R.id.main_layout);
+        textView = findViewById(R.id.text_view);
+    }
+
+    public void changeColor(View view) {
+        colorIndex = (colorIndex + 1) % colors.length;
+        mainLayout.setBackgroundColor(colors[colorIndex]);
+    }
+
+    public void changeFontSize(View view) {
+        float currentSize = textView.getTextSize();
+        float newSize = currentSize + 5;
+        textView.setTextSize(newSize);
+    }
+}
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <TextView
+        android:id="@+id/text_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Hello, World!"
+        android:textSize="18sp"
+        android:gravity="center"
+        android:layout_centerInParent="true" />
+
+    <Button
+        android:id="@+id/change_color_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Change Color"
+        android:layout_marginTop="16dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="16dp"
+        android:onClick="changeColor" />
+
+    <Button
+        android:id="@+id/change_font_size_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Change Font Size"
+        android:layout_marginTop="16dp"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="16dp"
+        android:onClick="changeFontSize" />
+
+</RelativeLayout>
+
+b)Create table Project(id,name,dept,city). Create Application to perform the following
+operations.(usingsqlite database)
+i) Add records.
+ii) Display all the records.
+
+
+
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+public class MainActivity extends AppCompatActivity {
+    private EditText idEditText, nameEditText, deptEditText, cityEditText;
+    private Button addRecordButton, displayRecordsButton;
+    private TextView resultTextView;
+    private DatabaseHelper databaseHelper;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        idEditText = findViewById(R.id.id_edit_text);
+        nameEditText = findViewById(R.id.name_edit_text);
+        deptEditText = findViewById(R.id.dept_edit_text);
+        cityEditText = findViewById(R.id.city_edit_text);
+        addRecordButton = findViewById(R.id.add_record_button);
+        displayRecordsButton = findViewById(R.id.display_records_button);
+        resultTextView = findViewById(R.id.result_text_view);
+
+        databaseHelper = new DatabaseHelper(this);
+
+        addRecordButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                addRecord();
+            }
+        });
+
+        displayRecordsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                displayRecords();
+            }
+        });
+    }
+
+    private void addRecord() {
+        SQLiteDatabase db = databaseHelper.getWritableDatabase();
+
+        ContentValues values = new ContentValues();
+        values.put("id", idEditText.getText().toString());
+        values.put("name", nameEditText.getText().toString());
+        values.put("dept", deptEditText.getText().toString());
+        values.put("city", cityEditText.getText().toString());
+
+        long newRowId = db.insert("Project", null, values);
+
+        if (newRowId != -1) {
+            resultTextView.setText("Record added successfully");
+        } else {
+            resultTextView.setText("Failed to add record");
+        }
+
+        clearFields();
+    }
+
+    private void displayRecords() {
+        SQLiteDatabase db = databaseHelper.getReadableDatabase();
+
+        Cursor cursor = db.query("Project", null, null, null, null, null, null);
+
+        StringBuilder records = new StringBuilder();
+
+        while (cursor.moveToNext()) {
+            String id = cursor.getString(cursor.getColumnIndexOrThrow("id"));
+            String name = cursor.getString(cursor.getColumnIndexOrThrow("name"));
+            String dept = cursor.getString(cursor.getColumnIndexOrThrow("dept"));
+            String city = cursor.getString(cursor.getColumnIndexOrThrow("city"));
+
+            records.append("ID: ").append(id).append("\n");
+            records.append("Name: ").append(name).append("\n");
+            records.append("Department: ").append(dept).append("\n");
+            records.append("City: ").append(city).append("\n");
+            records.append("------------------------").append("\n");
+        }
+
+        cursor.close();
+
+        resultTextView.setText(records.toString());
+    }
+
+    private void clearFields() {
+        idEditText.setText("");
+        nameEditText.setText("");
+        deptEditText.setText("");
+        cityEditText.setText("");
+    }
+}
+ code for the DatabaseHelper class:
+
+import android.content.Context;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+
+public class DatabaseHelper extends SQLiteOpenHelper {
+    private static final String DATABASE_NAME = "project.db";
+    private static final int DATABASE_VERSION = 1;
+
+    private static final String CREATE_TABLE_PROJECT = "CREATE TABLE Project (id INTEGER PRIMARY KEY, " +
+            "name TEXT, dept TEXT, city TEXT)";
+
+    public DatabaseHelper(Context context) {
+        super(context, DATABASE_NAME, null, DATABASE_VERSION);
+    }
+
+    @Override
+    public void onCreate(SQLiteDatabase db) {
+        db.execSQL(CREATE_TABLE_PROJECT);
+    }
+
+    @Override
+    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        db.execSQL("DROP TABLE IF EXISTS Project");
+        onCreate(db);
+    }
+
+}
+
+
+
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    tools:context=".MainActivity">
+
+    <EditText
+        android:id="@+id/id_edit_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="ID" />
+
+    <EditText
+        android:id="@+id/name_edit_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Name" />
+
+    <EditText
+        android:id="@+id/dept_edit_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Department" />
+
+    <EditText
+        android:id="@+id/city_edit_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="City" />
+
+    <Button
+        android:id="@+id/add_record_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Add Record" />
+
+    <Button
+        android:id="@+id/display_records_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Display Records" />
+
+    <TextView
+        android:id="@+id/result_text_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp" />
+
+</LinearLayout>
+
+
+

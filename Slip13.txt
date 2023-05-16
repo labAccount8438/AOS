@@ -1,0 +1,439 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+int main() {
+    int fd;
+    if ((fd = open("output.txt", O_WRONLY|O_CREAT|O_TRUNC, 0644)) == -1) {
+        perror("open");
+        exit(1);
+    }
+    if (dup2(fd, STDOUT_FILENO) == -1) {
+        perror("dup2");
+        exit(1);
+    }
+    printf("This message is redirected to output.txt\n");
+    close(fd);
+    return 0;
+}
+
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_ARGC 10
+#define MAX_CMD_LEN 100
+
+char *split(char *str, const char *delim) {
+    static char *last = NULL;
+    char *tok;
+
+    if (str != NULL) {
+        last = str;
+    }
+
+    if (last == NULL) {
+        return NULL;
+    }
+
+    tok = last;
+    last = strpbrk(last, delim);
+
+    if (last != NULL) {
+        *last++ = '\0';
+    }
+
+    return tok;
+}
+
+void execute(char **args) {
+    pid_t pid = fork();
+
+    if (pid == 0) {
+        // Child process
+        execvp(args[0], args);
+        perror("execvp");
+        exit(EXIT_FAILURE);
+    } else if (pid < 0) {
+        // Forking failed
+        perror("fork");
+    } else {
+        // Parent process
+        wait(NULL);
+    }
+}
+
+int main() {
+    char input[MAX_CMD_LEN];
+    char *tokens[MAX_ARGC];
+    char *token;
+    const char delim[] = " \t\n";
+    int i;
+
+    while (1) {
+        printf("NewShell$ ");
+        fgets(input, MAX_CMD_LEN, stdin);
+
+        // Split input into tokens
+        i = 0;
+        token = split(input, delim);
+
+        while (token != NULL && i < MAX_ARGC - 1) {
+            tokens[i++] = token;
+            token = split(NULL, delim);
+        }
+
+        tokens[i] = NULL;
+
+        if (tokens[0] != NULL) {
+            if (strcmp(tokens[0], "exit") == 0) {
+                exit(EXIT_SUCCESS);
+            } else if (strcmp(tokens[0], "typeline") == 0) {
+                if (tokens[1] != NULL && tokens[2] != NULL) {
+                    FILE *fp = fopen(tokens[2], "r");
+
+                    if (fp != NULL) {
+                        char line[MAX_CMD_LEN];
+                        int count = 0;
+                        int num_lines = atoi(tokens[1]);
+
+                        if (strcmp(tokens[1], "a") == 0) {
+                            // Print all lines
+                            while (fgets(line, sizeof(line), fp)) {
+                                printf("%s", line);
+                            }
+                        } else if (num_lines > 0) {
+                            // Print first n lines
+                            while (fgets(line, sizeof(line), fp) && count < num_lines) {
+                                printf("%s", line);
+                                count++;
+                            }
+                        } else {
+                            // Print last n lines
+                            fseek(fp, 0, SEEK_END);
+                            long int file_size = ftell(fp);
+                            long int offset = -1;
+                            long int newline_count = 0;
+
+                            while (newline_count < -num_lines && -offset <= file_size) {
+                                fseek(fp, offset, SEEK_END);
+
+                                if (fgetc(fp) == '\n') {
+                                    newline_count++;
+                                }
+
+                                offset--;
+                            }
+
+                            fseek(fp, -offset, SEEK_END);
+
+                            while (fgets(line, sizeof(line), fp)) {
+                                printf("%s", line);
+                            }
+                        }
+
+                        fclose(fp);
+                    } else {
+                        printf("Could not open file %s\n", tokens[2]);
+                    }
+                } else {
+                    printf("Invalid arguments\n");
+                }
+            } else {
+                execute(tokens);
+            }
+        }
+    }
+
+    return 0;
+}
+
+
+
+
+A)
+main_Activity.java
+
+public class MainActivity extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        String inputString = "abracadabra";
+        String outputString = removeMiddleA(inputString);
+
+        Log.d("Output", outputString);
+    }
+
+    private String removeMiddleA(String input) {
+        if (input.length() <= 2) {
+            return input;
+        }
+
+        char[] chars = input.toCharArray();
+        StringBuilder builder = new StringBuilder();
+
+        builder.append(chars[0]);
+
+        for (int i = 1; i < chars.length - 1; i++) {
+            if (chars[i] != 'a') {
+                builder.append(chars[i]);
+            }
+        }
+
+        builder.append(chars[chars.length - 1]);
+
+        return builder.toString();
+    }
+}
+
+
+
+
+main_activity.xml
+
+
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    tools:context=".MainActivity">
+
+    <TextView
+        android:id="@+id/tv_input"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Input String:"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_marginTop="16dp" />
+
+    <TextView
+        android:id="@+id/tv_output"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Output String:"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_marginTop="16dp" />
+
+</LinearLayout>
+
+
+
+
+
+B)
+DatabaseHelper.java
+
+import android.content.ContentValues;
+import android.content.Context;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+
+public class DatabaseHelper extends SQLiteOpenHelper {
+
+    private static final String DATABASE_NAME = "company.db";
+    private static final int DATABASE_VERSION = 1;
+
+    private static final String TABLE_NAME = "company";
+    private static final String COLUMN_ID = "id";
+    private static final String COLUMN_NAME = "name";
+    private static final String COLUMN_ADDRESS = "address";
+    private static final String COLUMN_PHNO = "phno";
+
+    public DatabaseHelper(Context context) {
+        super(context, DATABASE_NAME, null, DATABASE_VERSION);
+    }
+
+    @Override
+    public void onCreate(SQLiteDatabase db) {
+        String createTableQuery = "CREATE TABLE " + TABLE_NAME + " ("
+                + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+                + COLUMN_NAME + " TEXT, "
+                + COLUMN_ADDRESS + " TEXT, "
+                + COLUMN_PHNO + " TEXT)";
+        db.execSQL(createTableQuery);
+    }
+
+    @Override
+    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        String dropTableQuery = "DROP TABLE IF EXISTS " + TABLE_NAME;
+        db.execSQL(dropTableQuery);
+        onCreate(db);
+    }
+
+    public long insertCompany(String name, String address, String phno) {
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_NAME, name);
+        values.put(COLUMN_ADDRESS, address);
+        values.put(COLUMN_PHNO, phno);
+
+        long id = db.insert(TABLE_NAME, null, values);
+        db.close();
+
+        return id;
+    }
+
+    public Cursor getAllCompanies() {
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        String query = "SELECT * FROM " + TABLE_NAME;
+
+        return db.rawQuery(query, null);
+    }
+}
+
+
+
+MainActivity.java
+
+import androidx.appcompat.app.AppCompatActivity;
+import android.database.Cursor;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Toast;
+
+public class MainActivity extends AppCompatActivity {
+
+    private EditText etName, etAddress, etPhNo;
+    private Button btnInsert, btnShowAll;
+    private TextView tvResult;
+    private DatabaseHelper databaseHelper;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        etName = findViewById(R.id.et_name);
+        etAddress = findViewById(R.id.et_address);
+        etPhNo = findViewById(R.id.et_phno);
+        btnInsert = findViewById(R.id.btn_insert);
+        btnShowAll = findViewById(R.id.btn_show_all);
+        tvResult = findViewById(R.id.tv_result);
+
+        databaseHelper = new DatabaseHelper(this);
+
+        btnInsert.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String name = etName.getText().toString();
+                String address = etAddress.getText().toString();
+                String phno = etPhNo.getText().toString();
+
+                long id = databaseHelper.insert
+		Company(name, address, phno);
+			if (id != -1) {
+		Toast.makeText(MainActivity.this, "Company inserted with ID: " + id, Toast.LENGTH_SHORT).show();
+		clearInputFields();
+		} else {
+		Toast.makeText(MainActivity.this, "Failed to insert company", Toast.LENGTH_SHORT).show();
+	}
+	}
+	});
+	    btnShowAll.setOnClickListener(new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            Cursor cursor = databaseHelper.getAllCompanies();
+            displayCompanyDetails(cursor);
+        }
+    });
+}
+
+private void clearInputFields() {
+    etName.setText("");
+    etAddress.setText("");
+    etPhNo.setText("");
+}
+
+private void displayCompanyDetails(Cursor cursor) {
+    StringBuilder stringBuilder = new StringBuilder();
+
+    if (cursor != null && cursor.getCount() > 0) {
+        while (cursor.moveToNext()) {
+            int id = cursor.getInt(cursor.getColumnIndex(DatabaseHelper.COLUMN_ID));
+            String name = cursor.getString(cursor.getColumnIndex(DatabaseHelper.COLUMN_NAME));
+            String address = cursor.getString(cursor.getColumnIndex(DatabaseHelper.COLUMN_ADDRESS));
+            String phno = cursor.getString(cursor.getColumnIndex(DatabaseHelper.COLUMN_PHNO));
+
+            stringBuilder.append("ID: ").append(id)
+                    .append(", Name: ").append(name)
+                    .append(", Address: ").append(address)
+                    .append(", Phone No: ").append(phno)
+                    .append("\n");
+        }
+    } else {
+        stringBuilder.append("No companies found");
+    }
+
+    tvResult.setText(stringBuilder.toString());
+}
+
+
+
+
+MainActivity.xml
+
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <EditText
+        android:id="@+id/et_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Name" />
+
+    <EditText
+        android:id="@+id/et_address"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Address" />
+
+    <EditText
+        android:id="@+id/et_phno"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Phone Number" />
+
+    <Button
+        android:id="@+id/btn_insert"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Insert" />
+
+    <Button
+        android:id="@+id/btn_show_all"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Show All" />
+
+    <TextView
+        android:id="@+id/tv_result"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+</LinearLayout>

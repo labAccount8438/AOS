@@ -1,0 +1,212 @@
+A)
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+extern char **environ; // Declare the environment variables
+
+int main() {
+    char *path_var = getenv("PATH"); // Get the current value of the PATH variable
+    printf("Current PATH: %s\n", path_var);
+    
+    // Change the PATH variable to a new value
+    setenv("PATH", "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin", 1);
+    printf("New PATH: %s\n", getenv("PATH"));
+
+    // Reset the PATH variable to its original value
+    setenv("PATH", path_var, 1);
+    printf("Reset PATH: %s\n", getenv("PATH"));
+
+    return 0;
+}
+
+
+
+B)
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <dirent.h>
+#include <string.h>
+
+int main() {
+    DIR *dir;
+    struct dirent *entry;
+    char path[1024];
+
+    // Open current directory
+    if ((dir = opendir(".")) == NULL) {
+        perror("opendir");
+        exit(EXIT_FAILURE);
+    }
+
+    // Read all directory entries
+    while ((entry = readdir(dir)) != NULL) {
+        // Skip if entry is not a directory
+        if (entry->d_type != DT_DIR) {
+            continue;
+        }
+        // Skip "." and ".." directories
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
+        // Print subdirectory name
+        printf("%s\n", entry->d_name);
+    }
+
+    closedir(dir);
+    return 0;
+}
+
+
+
+A)
+
+$$activity_main.xml
+
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    tools:context=".MainActivity">
+
+    <EditText
+        android:id="@+id/et_number1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter number 1"
+        android:inputType="number" />
+
+    <EditText
+        android:id="@+id/et_number2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter number 2"
+        android:inputType="number" />
+
+    <Button
+        android:id="@+id/btn_check"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Check" />
+
+    <TextView
+        android:id="@+id/tv_result"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp" />
+
+</LinearLayout>
+
+$$MainActivity.java
+
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+
+public class MainActivity extends AppCompatActivity {
+
+    private EditText etNumber1;
+    private EditText etNumber2;
+    private TextView tvResult;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        etNumber1 = findViewById(R.id.et_number1);
+        etNumber2 = findViewById(R.id.et_number2);
+        tvResult = findViewById(R.id.tv_result);
+
+        Button btnCheck = findViewById(R.id.btn_check);
+        btnCheck.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int number1 = Integer.parseInt(etNumber1.getText().toString());
+                int number2 = Integer.parseInt(etNumber2.getText().toString());
+
+                boolean result = checkNumbers(number1, number2);
+                tvResult.setText("Result: " + result);
+            }
+        });
+    }
+
+    private boolean checkNumbers(int num1, int num2) {
+        return num1 == 20 || num2 == 20 || num1 + num2 == 20;
+    }
+}
+
+B)
+
+$$activity_main.xml
+
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="16dp"
+    tools:context=".MainActivity">
+
+    <Button
+        android:id="@+id/btn_show_dialog"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Show Dialog" />
+
+</LinearLayout>
+
+$$MainActivity.java
+
+package com.example.program2;
+
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+
+public class MainActivity extends AppCompatActivity {
+
+    private Button btnShowDialog;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        btnShowDialog = findViewById(R.id.btn_show_dialog);
+        btnShowDialog.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showDialog();
+            }
+        });
+    }
+
+    private void showDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("AlertDialog Example")
+                .setMessage("This is an example of an AlertDialog.")
+                .setPositiveButton("OK", null)
+                .setNegativeButton("Cancel", null)
+                .setCancelable(false);
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+}
+
+

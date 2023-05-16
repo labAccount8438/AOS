@@ -1,0 +1,185 @@
+A)
+
+#include <stdio.h>
+#include <setjmp.h>
+
+jmp_buf buf;
+
+void print_msg(const char* msg, int n) {
+    for (int i = 0; i < n; i++) {
+        printf("%s\n", msg);
+        if (i == n - 1) {
+            longjmp(buf, 1);
+        }
+    }
+}
+
+int main() {
+    int n = 5;
+
+    if (setjmp(buf) == 0) {
+        print_msg("Hello, world!", n);
+    }
+
+    return 0;
+}
+
+
+B)
+#include <stdio.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <time.h>
+#include <string.h>
+
+int main() {
+    DIR *dir;
+    struct dirent *entry;
+    struct stat filestat;
+    char month[] = "May"; // change this to the desired month
+    int month_num;
+
+    // convert month name to month number
+    if (strcmp(month, "January") == 0) {
+        month_num = 0;
+    } else if (strcmp(month, "February") == 0) {
+        month_num = 1;
+    } else if (strcmp(month, "March") == 0) {
+        month_num = 2;
+    } else if (strcmp(month, "April") == 0) {
+        month_num = 3;
+    } else if (strcmp(month, "May") == 0) {
+        month_num = 4;
+    } else if (strcmp(month, "June") == 0) {
+        month_num = 5;
+    } else if (strcmp(month, "July") == 0) {
+        month_num = 6;
+    } else if (strcmp(month, "August") == 0) {
+        month_num = 7;
+    } else if (strcmp(month, "September") == 0) {
+        month_num = 8;
+    } else if (strcmp(month, "October") == 0) {
+        month_num = 9;
+    } else if (strcmp(month, "November") == 0) {
+        month_num = 10;
+    } else if (strcmp(month, "December") == 0) {
+        month_num = 11;
+    } else {
+        printf("Invalid month\n");
+        return 1;
+    }
+
+    // open current directory
+    dir = opendir(".");
+    if (dir == NULL) {
+        printf("Error: unable to open directory\n");
+        return 1;
+    }
+
+    // read each directory entry
+    while ((entry = readdir(dir)) != NULL) {
+        // get file status
+        if (stat(entry->d_name, &filestat) < 0) {
+            continue;
+        }
+        // check if file was created in specified month
+        struct tm *time = localtime(&filestat.st_ctime);
+        if (time->tm_mon == month_num) {
+            printf("%s\n", entry->d_name);
+        }
+    }
+
+    // close directory
+    closedir(dir);
+
+    return 0;
+}
+
+
+
+a)Write a Swift program to find the Factorial of a given Number.
+
+
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+public class MainActivity extends AppCompatActivity {
+    private EditText numberEditText;
+    private Button calculateButton;
+    private TextView resultTextView;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        numberEditText = findViewById(R.id.number_edit_text);
+        calculateButton = findViewById(R.id.calculate_button);
+        resultTextView = findViewById(R.id.result_text_view);
+
+        calculateButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                calculateFactorial();
+            }
+        });
+    }
+
+    private void calculateFactorial() {
+        String numberStr = numberEditText.getText().toString().trim();
+
+        if (numberStr.isEmpty()) {
+            resultTextView.setText("Please enter a number");
+            return;
+        }
+
+        int number = Integer.parseInt(numberStr);
+
+        int factorial = 1;
+        for (int i = 2; i <= number; i++) {
+            factorial *= i;
+        }
+
+        resultTextView.setText("Factorial: " + factorial);
+    }
+}
+
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    tools:context=".MainActivity">
+
+    <EditText
+        android:id="@+id/number_edit_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter a number"
+        android:inputType="number" />
+
+    <Button
+        android:id="@+id/calculate_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Calculate Factorial" />
+
+    <TextView
+        android:id="@+id/result_text_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="18sp"
+        android:layout_marginTop="16dp" />
+
+</LinearLayout>
+
+
+
+b)

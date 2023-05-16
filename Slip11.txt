@@ -1,0 +1,335 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <alloca.h>
+
+int main() {
+    int n;
+
+    printf("Enter the number of elements: ");
+    scanf("%d", &n);
+
+    // Allocate memory for the array using alloca
+    int *arr = alloca(n * sizeof(int));
+
+    // Read values into the array
+    for (int i = 0; i < n; i++) {
+        printf("Enter element %d: ", i + 1);
+        scanf("%d", &arr[i]);
+    }
+
+    // Print the array
+    printf("The array is: ");
+    for (int i = 0; i < n; i++) {
+        printf("%d ", arr[i]);
+    }
+    printf("\n");
+
+    return 0;
+}
+
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+#define MAX_ARGS 10
+#define MAX_ARG_LEN 100
+
+void execute(char *args[]) {
+    pid_t pid = fork();
+    if (pid == 0) {
+        execvp(args[0], args);
+        perror("execvp");
+        exit(1);
+    } else if (pid > 0) {
+        int status;
+        waitpid(pid, &status, 0);
+    } else {
+        perror("fork");
+    }
+}
+
+void count(char *command, char *filename) {
+    FILE *fp = fopen(filename, "r");
+    if (fp == NULL) {
+        perror("fopen");
+        return;
+    }
+    int count = 0;
+    int c;
+    if (strcmp(command, "c") == 0) {
+        while ((c = getc(fp)) != EOF) {
+            count++;
+        }
+        printf("Number of characters in file: %d\n", count);
+    } else if (strcmp(command, "w") == 0) {
+        while ((c = getc(fp)) != EOF) {
+            if (c == ' ' || c == '\n' || c == '\t') {
+                count++;
+            }
+        }
+        printf("Number of words in file: %d\n", count + 1);
+    } else if (strcmp(command, "l") == 0) {
+        while ((c = getc(fp)) != EOF) {
+            if (c == '\n') {
+                count++;
+            }
+        }
+        printf("Number of lines in file: %d\n", count + 1);
+    } else {
+        printf("Invalid count command\n");
+    }
+    fclose(fp);
+}
+
+int main() {
+    char prompt[] = "NewShell$ ";
+    while (1) {
+        printf("%s", prompt);
+        char input[1000];
+        fgets(input, 1000, stdin);
+        input[strcspn(input, "\n")] = '\0';
+        char *args[MAX_ARGS];
+        char *arg = strtok(input, " ");
+        int i = 0;
+        while (arg != NULL && i < MAX_ARGS) {
+            args[i] = arg;
+            arg = strtok(NULL, " ");
+            i++;
+        }
+        args[i] = NULL;
+        if (args[0] == NULL) {
+            continue;
+        }
+        if (strcmp(args[0], "count") == 0 && args[1] != NULL && args[2] != NULL) {
+            count(args[1], args[2]);
+        } else {
+            execute(args);
+        }
+    }
+    return 0;
+}
+
+
+
+
+A)
+
+activity.xml
+
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    tools:context=".MainActivity">
+
+    <EditText
+        android:id="@+id/et_number1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter number 1"
+        android:inputType="number" />
+
+    <EditText
+        android:id="@+id/et_number2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter number 2"
+        android:inputType="number" />
+
+    <Button
+        android:id="@+id/btn_calculate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Calculate" />
+
+    <TextView
+        android:id="@+id/tv_result"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_marginTop="16dp" />
+
+</LinearLayout>
+
+
+
+
+MainActivity.java
+
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+import androidx.appcompat.app.AppCompatActivity;
+
+public class MainActivity extends AppCompatActivity {
+
+    private EditText etNumber1;
+    private EditText etNumber2;
+    private TextView tvResult;
+    private Button btnCalculate;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        etNumber1 = findViewById(R.id.et_number1);
+        etNumber2 = findViewById(R.id.et_number2);
+        tvResult = findViewById(R.id.tv_result);
+        btnCalculate = findViewById(R.id.btn_calculate);
+
+        btnCalculate.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int number1 = Integer.parseInt(etNumber1.getText().toString());
+                int number2 = Integer.parseInt(etNumber2.getText().toString());
+
+                int sum = number1 + number2;
+
+                if (number1 == number2) {
+                    int tripleSum = sum * 3;
+                    tvResult.setText("Triple Sum: " + tripleSum);
+                } else {
+                    tvResult.setText("Sum: " + sum);
+                }
+            }
+        });
+    }
+}
+
+
+
+
+
+
+B)
+
+activity.xml
+
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    tools:context=".MainActivity">
+
+    <EditText
+        android:id="@+id/et_number"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter a number"
+        android:inputType="number" />
+
+    <TextView
+        android:id="@+id/tv_result"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_marginTop="16dp" />
+
+</LinearLayout>
+
+
+
+Main_menu.xml
+
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/menu_factorial"
+        android:title="Calculate Factorial" />
+
+    <item
+        android:id="@+id/menu_sum_of_digits"
+        android:title="Calculate Sum of Digits" />
+</menu>
+
+
+
+
+Activity.java
+
+import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.EditText;
+import android.widget.TextView;
+import androidx.appcompat.app.AppCompatActivity;
+
+public class MainActivity extends AppCompatActivity {
+
+    private EditText etNumber;
+    private TextView tvResult;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        etNumber = findViewById(R.id.et_number);
+        tvResult = findViewById(R.id.tv_result);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int itemId = item.getItemId();
+
+        if (itemId == R.id.menu_factorial) {
+            calculateFactorial();
+            return true;
+        } else if (itemId == R.id.menu_sum_of_digits) {
+            calculateSumOfDigits();
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void calculateFactorial() {
+        String inputStr = etNumber.getText().toString();
+        int number = Integer.parseInt(inputStr);
+
+        int factorial = 1;
+        for (int i = 2; i <= number; i++) {
+            factorial *= i;
+        }
+
+        tvResult.setText("Factorial: " + factorial);
+    }
+
+    private void calculateSumOfDigits() {
+        String inputStr = etNumber.getText().toString();
+        int number = Integer.parseInt(inputStr);
+
+        int sum = 0;
+        while (number > 0) {
+            sum += number % 10;
+            number /= 10;
+        }
+
+        tvResult.setText("Sum of Digits: " + sum);
+    }
+}
+
+
+

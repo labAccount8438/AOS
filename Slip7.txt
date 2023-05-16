@@ -1,0 +1,307 @@
+A)
+
+#include <stdio.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+int main() {
+    int fd = open("file_with_hole.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (fd < 0) {
+        perror("open failed");
+        return 1;
+    }
+
+    int hole_size = 1024 * 1024; // 1 MB
+    int bytes_written = write(fd, "hello world", 11);
+    if (bytes_written < 0) {
+        perror("write failed");
+        return 1;
+    }
+
+    off_t offset = lseek(fd, hole_size, SEEK_CUR);
+    if (offset < 0) {
+        perror("lseek failed");
+        return 1;
+    }
+
+    bytes_written = write(fd, "goodbye world", 13);
+    if (bytes_written < 0) {
+        perror("write failed");
+        return 1;
+    }
+
+    close(fd);
+    return 0;
+}
+
+
+B)
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <time.h>
+#include <pwd.h>
+#include <grp.h>
+
+int main(int argc, char *argv[]) {
+    struct stat sb;
+
+    if (argc != 2) {
+        fprintf(stderr, "Usage: %s <filename>\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
+
+    if (stat(argv[1], &sb) == -1) {
+        perror("stat");
+        exit(EXIT_FAILURE);
+    }
+
+    // File type
+    printf("%c", (S_ISREG(sb.st_mode)) ? '-' :
+                    (S_ISDIR(sb.st_mode)) ? 'd' :
+                    (S_ISLNK(sb.st_mode)) ? 'l' :
+                    (S_ISCHR(sb.st_mode)) ? 'c' :
+                    (S_ISBLK(sb.st_mode)) ? 'b' :
+                    (S_ISFIFO(sb.st_mode)) ? 'p' :
+                    (S_ISSOCK(sb.st_mode)) ? 's' : '-');
+
+    // Permissions
+    printf("%c%c%c%c%c%c%c%c%c",
+           (sb.st_mode & S_IRUSR) ? 'r' : '-',
+           (sb.st_mode & S_IWUSR) ? 'w' : '-',
+           (sb.st_mode & S_IXUSR) ? 'x' : '-',
+           (sb.st_mode & S_IRGRP) ? 'r' : '-',
+           (sb.st_mode & S_IWGRP) ? 'w' : '-',
+           (sb.st_mode & S_IXGRP) ? 'x' : '-',
+           (sb.st_mode & S_IROTH) ? 'r' : '-',
+           (sb.st_mode & S_IWOTH) ? 'w' : '-',
+           (sb.st_mode & S_IXOTH) ? 'x' : '-');
+
+    // Hard link count
+    printf(" %ld ", (long) sb.st_nlink);
+
+    // User and group ID
+    struct passwd *pwd = getpwuid(sb.st_uid);
+    struct group *grp = getgrgid(sb.st_gid);
+    printf("%s %s ", (pwd != NULL) ? pwd->pw_name : "unknown", (grp != NULL) ? grp->gr_name : "unknown");
+
+    // File size
+    printf("%5ld ", (long) sb.st_size);
+
+    // Last access time
+    char timebuf[80];
+    strftime(timebuf, sizeof(timebuf), "%Y-%m-%d %H:%M:%S", localtime(&sb.st_atime));
+    printf("%s ", timebuf);
+
+    // Last modification time
+    strftime(timebuf, sizeof(timebuf), "%Y-%m-%d %H:%M:%S", localtime(&sb.st_mtime));
+    printf("%s ", timebuf);
+
+    // File name
+    printf("%s\n", argv[1]);
+
+    return 0;
+}
+
+
+
+
+A)
+
+$$Activity_main.xml
+
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    tools:context=".MainActivity">
+
+    <EditText
+        android:id="@+id/edit_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter a string" />
+
+    <Button
+        android:id="@+id/button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Change First and Last Character" />
+
+    <TextView
+        android:id="@+id/text_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp" />
+
+</LinearLayout>
+
+$$MainActivity.java
+
+package com.example.program2;
+
+import androidx.appcompat.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+
+public class MainActivity extends AppCompatActivity {
+
+    private EditText editText;
+    private TextView textView;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        editText = findViewById(R.id.edit_text);
+        textView = findViewById(R.id.text_view);
+
+        Button button = findViewById(R.id.button);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String input = editText.getText().toString();
+                String output = changeFirstAndLastCharacter(input);
+                textView.setText(output);
+            }
+        });
+    }
+
+    private String changeFirstAndLastCharacter(String input) {
+        if (input.length() < 2) {
+            return input;
+        }
+
+        char firstChar = input.charAt(0);
+        char lastChar = input.charAt(input.length() - 1);
+
+        StringBuilder sb = new StringBuilder(input);
+        sb.setCharAt(0, lastChar);
+        sb.setCharAt(input.length() - 1, firstChar);
+
+        return sb.toString();
+    }
+}
+
+
+B)
+
+$$Activity_main.xml
+
+<?xml version="1.0" encoding="utf-8"?>
+<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+ xmlns:app="http://schemas.android.com/apk/res-auto"
+ xmlns:tools="http://schemas.android.com/tools"
+ android:layout_width="match_parent"
+ android:layout_height="match_parent"
+ tools:context=".MainActivity">
+ <TableRow>
+ <TextView
+ android:id="@+id/tv"
+ android:layout_width="200dp"
+ android:layout_height="50dp"
+ android:text="Enter Item:"
+ android:textSize="30dp"/>
+ <EditText
+ android:id="@+id/et"
+ android:layout_width="200dp"
+ android:layout_height="50dp"
+ android:textSize="30dp"/>
+ </TableRow>
+ <TableRow>
+ <Button
+ android:id="@+id/b1"
+ android:layout_width="200dp"
+ android:layout_height="80dp"
+ android:textSize="15dp"
+ android:text="Add to list"/>
+ <Button
+ android:id="@+id/b2"
+ android:layout_width="200dp"
+ android:layout_height="80dp"
+
+ android:text="Remove from list"
+ android:textSize="15dp" />
+ </TableRow>
+ <TableRow>
+ <TextView
+ android:id="@+id/tv1"
+ android:layout_width="200dp"
+ android:layout_height="50dp"
+ android:text="See response below"
+ android:textSize="20dp"/>
+ </TableRow>
+ <TableRow>
+ <Spinner
+ android:id="@+id/sp"
+ android:layout_width="200dp"
+ android:layout_height="50dp"/>
+ </TableRow>
+</TableLayout> 
+
+$$MainActivity.java
+
+package com.example.myspinner;
+import androidx.appcompat.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Spinner;
+import android.widget.Toast;
+import java.util.ArrayList;
+import java.util.Arrays;
+
+public class MainActivity extends AppCompatActivity {
+ Button b1,b2;
+ EditText et;
+ Spinner spinner;
+ String data[]={"Fruits"};
+ ArrayList list=new ArrayList(Arrays.asList(data));
+ @Override
+ protected void onCreate(Bundle savedInstanceState) {
+ super.onCreate(savedInstanceState);
+ setContentView(R.layout.activity_main);
+ b1=(Button)findViewById(R.id.b1);
+ b2=(Button)findViewById(R.id.b2);
+ et=(EditText)findViewById(R.id.et);
+ spinner=(Spinner)findViewById(R.id.sp);
+ ArrayAdapter adapter=new ArrayAdapter(this,
+androidx.appcompat.R.layout.support_simple_spinner_dropdown_item,list);
+ spinner.setAdapter(adapter);
+ b1.setOnClickListener(new View.OnClickListener() {
+ @Override
+ public void onClick(View v) {
+ String s=et.getText().toString();
+ list.add(s);
+ adapter.notifyDataSetChanged();
+ spinner.setAdapter(adapter);
+ Toast.makeText(getApplicationContext(), "Item added to spinner",
+Toast.LENGTH_SHORT).show();
+ }
+ });
+ b2.setOnClickListener(new View.OnClickListener() {
+ @Override
+ public void onClick(View v) {
+ String s=et.getText().toString();
+ list.remove(s);
+ adapter.notifyDataSetChanged();
+
+ spinner.setAdapter(adapter);
+ Toast.makeText(getApplicationContext(), "Item removed from spinner",
+Toast.LENGTH_SHORT).show();
+ }
+ });
+ }
+} 
+
+

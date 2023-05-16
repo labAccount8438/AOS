@@ -1,0 +1,511 @@
+A)
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+int main() {
+    pid_t pid;
+    int status;
+    if ((pid = fork()) < 0) {
+        printf("Error: fork failed\n");
+        exit(1);
+    } else if (pid == 0) {
+        printf("I am the child process\n");
+        exit(2);
+    } else {
+        printf("I am the parent process\n");
+        wait(&status);
+        if (WIFEXITED(status)) {
+            printf("Child process terminated normally with exit status: %d\n", WEXITSTATUS(status));
+        } else {
+            printf("Child process terminated abnormally\n");
+        }
+    }
+    return 0;
+}
+
+
+B)
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <string.h>
+
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        fprintf(stderr, "Usage: %s <directory>\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
+
+    char *dir_name = argv[1];
+
+    DIR *dirp = opendir(dir_name);
+    if (!dirp) {
+        perror("opendir");
+        exit(EXIT_FAILURE);
+    }
+
+    char backup_dir_name[256];
+    sprintf(backup_dir_name, "%s/backup", dir_name);
+    mkdir(backup_dir_name, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+
+    struct dirent *dp;
+    while ((dp = readdir(dirp)) != NULL) {
+        if (strcmp(dp->d_name, ".") == 0 || strcmp(dp->d_name, "..") == 0) {
+            continue;
+        }
+
+        char src_file_name[256], dst_file_name[256];
+        sprintf(src_file_name, "%s/%s", dir_name, dp->d_name);
+        sprintf(dst_file_name, "%s/%s", backup_dir_name, dp->d_name);
+
+        pid_t pid = fork();
+        if (pid < 0) {
+            perror("fork");
+            exit(EXIT_FAILURE);
+        } else if (pid == 0) { // child process
+            char *argv[] = {"cp", src_file_name, dst_file_name, NULL};
+            execvp(argv[0], argv);
+            perror("execvp");
+            exit(EXIT_FAILURE);
+        } else { // parent process
+            int status;
+            waitpid(pid, &status, 0);
+            if (WIFEXITED(status)) {
+                printf("File %s copied to backup directory\n", dp->d_name);
+            } else {
+                fprintf(stderr, "File %s copy failed\n", dp->d_name);
+            }
+        }
+    }
+
+    closedir(dirp);
+
+    return 0;
+}
+
+
+
+
+ a)Write an Android application to accept two numbers from the user, and displays them, but reject
+input if both numbers are greater than 10 and asks for two new numbers. 
+
+
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+public class MainActivity extends AppCompatActivity {
+    private EditText number1EditText, number2EditText;
+    private Button displayButton;
+    private TextView resultTextView;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        number1EditText = findViewById(R.id.number1_edit_text);
+        number2EditText = findViewById(R.id.number2_edit_text);
+        displayButton = findViewById(R.id.display_button);
+        resultTextView = findViewById(R.id.result_text_view);
+
+        displayButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                displayNumbers();
+            }
+        });
+    }
+
+    private void displayNumbers() {
+        int number1 = Integer.parseInt(number1EditText.getText().toString());
+        int number2 = Integer.parseInt(number2EditText.getText().toString());
+
+        if (number1 > 10 && number2 > 10) {
+            resultTextView.setText("Both numbers are greater than 10. Please enter new numbers.");
+        } else {
+            resultTextView.setText("Number 1: " + number1 + "\nNumber 2: " + number2);
+        }
+    }
+}
+
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    tools:context=".MainActivity">
+
+    <EditText
+        android:id="@+id/number1_edit_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter number 1"
+        android:inputType="number" />
+
+    <EditText
+        android:id="@+id/number2_edit_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter number 2"
+        android:inputType="number" />
+
+    <Button
+        android:id="@+id/display_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Display Numbers" />
+
+    <TextView
+        android:id="@+id/result_text_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp" />
+
+</LinearLayout>
+
+
+b)Create the simple calculator shown below also perform appropriate operation
+
+
+
+package com.example.basiccalculator;
+
+import android.annotation.SuppressLint;
+import android.os.Bundle;
+import android.widget.Button;
+import android.widget.EditText;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+public class MainActivity extends AppCompatActivity {
+    Button butn1, butn2,butn3,butn4,butn5,butn6,butn7,butn8,butn9,butn0,butnpt,butnc,butneq,butnadd,butnsub,butnmult,butndiv;
+
+    EditText editText;
+
+    float mValueOne, mValueTwo;
+
+    boolean add, sub, mult, div;
+
+
+    @SuppressLint("SetTextI18n")
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        butn1 = findViewById(R.id.butn1);
+        butn2 = findViewById(R.id.butn2);
+        butn3 = findViewById(R.id.butn3);
+        butn4 = findViewById(R.id.butn4);
+        butn5 = findViewById(R.id.butn5);
+        butn6 = findViewById(R.id.butn6);
+        butn7 = findViewById(R.id.butn7);
+        butn8 = findViewById(R.id.butn8);
+        butn9 = findViewById(R.id.butn9);
+        butn0 = findViewById(R.id.butn0);
+        butnpt = findViewById(R.id.butnpt);
+        butnc = findViewById(R.id.butnc);
+        butneq = findViewById(R.id.butneq);
+        butnadd = findViewById(R.id.butnadd);
+        butnsub = findViewById(R.id.butnsub);
+        butnmult = findViewById(R.id.butnmult);
+        butndiv = findViewById(R.id.butndiv);
+        editText = findViewById(R.id.edittext);
+
+        butn1.setOnClickListener(v -> editText.setText(editText.getText() + "1"));
+        butn2.setOnClickListener(v -> editText.setText(editText.getText() + "2"));
+        butn3.setOnClickListener(v -> editText.setText(editText.getText() + "3"));
+        butn4.setOnClickListener(v -> editText.setText(editText.getText() + "4"));
+        butn5.setOnClickListener(v -> editText.setText(editText.getText() + "5"));
+        butn6.setOnClickListener(v -> editText.setText(editText.getText() + "6"));
+        butn7.setOnClickListener(v -> editText.setText(editText.getText() + "7"));
+        butn8.setOnClickListener(v -> editText.setText(editText.getText() + "8"));
+        butn9.setOnClickListener(v -> editText.setText(editText.getText() + "9"));
+        butn0.setOnClickListener(v -> editText.setText(editText.getText() + "0"));
+        butnpt.setOnClickListener(v -> editText.setText(editText.getText() + "."));
+
+        butnadd.setOnClickListener(v -> {
+            if(editText == null) {
+            } else {
+                    mValueOne = Float.parseFloat(editText.getText() + "");
+                    add = true;
+                    editText.setText(null);
+                }
+        } );
+        butnsub.setOnClickListener(v -> {
+            mValueOne = Float.parseFloat(editText.getText() + "");
+            sub = true;
+            editText.setText(null);
+        });
+        butnmult.setOnClickListener(v -> {
+            mValueOne = Float.parseFloat(editText.getText() + "");
+            mult = true;
+            editText.setText(null);
+        });
+        butndiv.setOnClickListener(v -> {
+            mValueOne = Float.parseFloat(editText.getText() + "");
+            div = true;
+            editText.setText(null);
+        });
+        butneq.setOnClickListener(v -> {
+            mValueTwo = Float.parseFloat(editText.getText() + "");
+            if(add) {
+                editText.setText(mValueOne + mValueTwo + "");
+                add = false;
+            }
+            if(sub) {
+                editText.setText(mValueOne - mValueTwo + "");
+                sub = false;
+            }
+            if(mult) {
+                editText.setText(mValueOne * mValueTwo + "");
+                mult = false;
+            }
+            if(div) {
+                editText.setText(mValueOne / mValueTwo + "");
+                div = false;
+            }
+        });
+        butnc.setOnClickListener(v -> editText.setText(""));
+        butnpt.setOnClickListener(v -> editText.setText(editText.getText() + "."));
+    }
+}
+
+
+
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <Button
+        android:id="@+id/butn1"
+        android:layout_width="87dp"
+        android:layout_height="79dp"
+        android:text="1"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.024"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.216" />
+
+    <Button
+        android:id="@+id/butn2"
+        android:layout_width="87dp"
+        android:layout_height="79dp"
+        android:text="2"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.327"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.216" />
+
+    <Button
+        android:id="@+id/butn3"
+        android:layout_width="87dp"
+        android:layout_height="79dp"
+        android:text="3"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.632"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.216" />
+
+    <Button
+        android:id="@+id/butn4"
+        android:layout_width="87dp"
+        android:layout_height="79dp"
+        android:text="4"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.024"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.355" />
+
+    <Button
+        android:id="@+id/butn5"
+        android:layout_width="87dp"
+        android:layout_height="79dp"
+        android:text="5"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.327"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.355" />
+
+    <Button
+        android:id="@+id/butn6"
+        android:layout_width="87dp"
+        android:layout_height="79dp"
+        android:text="6"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.632"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.355" />
+
+    <Button
+        android:id="@+id/butn7"
+        android:layout_width="87dp"
+        android:layout_height="79dp"
+        android:text="7"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.024"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.495" />
+
+    <Button
+        android:id="@+id/butn8"
+        android:layout_width="87dp"
+        android:layout_height="79dp"
+        android:text="8"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.327"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/butn9"
+        android:layout_width="87dp"
+        android:layout_height="79dp"
+        android:text="9"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.632"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/butn0"
+        android:layout_width="87dp"
+        android:layout_height="79dp"
+        android:text="0"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.024"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.647" />
+
+    <Button
+        android:id="@+id/butnpt"
+        android:layout_width="87dp"
+        android:layout_height="79dp"
+        android:text="."
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.327"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.647" />
+
+    <Button
+        android:id="@+id/butnc"
+        android:layout_width="87dp"
+        android:layout_height="79dp"
+        android:text="C"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.632"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.647" />
+
+    <Button
+        android:id="@+id/butneq"
+        android:layout_width="385dp"
+        android:layout_height="66dp"
+        android:text="="
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.307"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.771" />
+
+    <Button
+        android:id="@+id/butnadd"
+        android:layout_width="87dp"
+        android:layout_height="79dp"
+        android:text="+"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.938"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.216" />
+
+    <Button
+        android:id="@+id/butnsub"
+        android:layout_width="87dp"
+        android:layout_height="79dp"
+        android:text="-"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.95"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.355" />
+
+    <Button
+        android:id="@+id/butnmult"
+        android:layout_width="87dp"
+        android:layout_height="79dp"
+        android:text="X"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.938"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/butndiv"
+        android:layout_width="87dp"
+        android:layout_height="79dp"
+        android:text="/"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.938"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.647" />
+
+    <EditText
+        android:id="@+id/edittext"
+        android:layout_width="376dp"
+        android:layout_height="112dp"
+        android:layout_marginEnd="24dp"
+        android:ems="10"
+        android:inputType="textPersonName"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.025" />
+</androidx.constraintlayout.widget.ConstraintLayout>

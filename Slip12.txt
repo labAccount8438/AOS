@@ -1,0 +1,337 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
+
+void catch_signal(int sig) {
+    printf("Alarm is fired!\n");
+}
+
+int main() {
+    pid_t pid;
+    int status;
+
+    signal(SIGALRM, catch_signal);
+
+    pid = fork();
+    if (pid == -1) {
+        perror("fork");
+        exit(EXIT_FAILURE);
+    } else if (pid == 0) {
+        // Child process
+        sleep(5); // Wait for 5 seconds
+        kill(getppid(), SIGALRM); // Send SIGALRM to parent process
+        exit(EXIT_SUCCESS);
+    } else {
+        // Parent process
+        printf("Waiting for alarm...\n");
+        pause(); // Wait for signal
+        printf("Alarm received.\n");
+        wait(&status); // Wait for child process to exit
+        exit(EXIT_SUCCESS);
+    }
+}
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <dirent.h>
+#include <sys/stat.h>
+
+void display_files(char *path, long int n) {
+    DIR *dir = opendir(path);
+    if (dir == NULL) {
+        fprintf(stderr, "Unable to open directory %s\n", path);
+        return;
+    }
+
+    struct dirent *entry;
+    struct stat statbuf;
+    char filepath[1024];
+
+    while ((entry = readdir(dir)) != NULL) {
+        snprintf(filepath, sizeof(filepath), "%s/%s", path, entry->d_name);
+        if (stat(filepath, &statbuf) == -1) {
+            fprintf(stderr, "Unable to stat %s\n", filepath);
+            continue;
+        }
+
+        if (S_ISDIR(statbuf.st_mode)) {
+            if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+                continue;
+            }
+            display_files(filepath, n);
+        } else if (S_ISREG(statbuf.st_mode)) {
+            if (statbuf.st_size > n) {
+                printf("%s\n", filepath);
+            }
+        }
+    }
+    closedir(dir);
+}
+
+int main(int argc, char **argv) {
+    if (argc < 2) {
+        fprintf(stderr, "Usage: %s <size>\n", argv[0]);
+        return EXIT_FAILURE;
+    }
+
+    long int n = strtol(argv[1], NULL, 10);
+    if (n <= 0) {
+        fprintf(stderr, "Invalid size %s\n", argv[1]);
+        return EXIT_FAILURE;
+    }
+
+    display_files(".", n);
+
+    return EXIT_SUCCESS;
+}
+
+
+A)) Construct an Android Application to accept a number and calculate Factorial and Sum of Digits of a
+given number using Menu.
+import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.MapStyleOptions;
+import com.google.android.gms.maps.model.TileOverlayOptions;
+import com.google.android.gms.maps.model.UrlTileProvider;
+
+import java.net.MalformedURLException;
+import java.net.URL;
+
+public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback {
+    private GoogleMap mMap;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_maps);
+
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.map_fragment);
+        mapFragment.getMapAsync(this);
+    }
+
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        mMap = googleMap;
+
+        try {
+            mMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this, R.raw.map_style_json));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.map_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int itemId = item.getItemId();
+
+        switch (itemId) {
+            case R.id.menu_zoom_in:
+                mMap.animateCamera(CameraUpdateFactory.zoomIn());
+                return true;
+            case R.id.menu_zoom_out:
+                mMap.animateCamera(CameraUpdateFactory.zoomOut());
+                return true;
+            case R.id.menu_satellite_view:
+                mMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
+                return true;
+            case R.id.menu_normal_view:
+                mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+}
+
+
+
+
+
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MapsActivity">
+
+    <fragment
+        android:id="@+id/map_fragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        class="com.google.android.gms.maps.SupportMapFragment" />
+
+</RelativeLayout>
+
+
+
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/menu_zoom_in"
+        android:title="Zoom In" />
+
+    <item
+        android:id="@+id/menu_zoom_out"
+        android:title="Zoom Out" />
+
+    <item
+        android:id="@+id/menu_satellite_view"
+        android:title="Satellite View" />
+
+    <item
+        android:id="@+id/menu_normal_view"
+        android:title="Normal View" />
+</menu>
+
+
+b)) Create an Android application, where the user can enter player name and points in one view and
+display it in another view.
+
+Create a new Java class named Player.java to define the Player model:
+
+public class Player {
+    private String name;
+    private int points;
+
+    public Player(String name, int points) {
+        this.name = name;
+        this.points = points;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getPoints() {
+        return points;
+    }
+}
+
+
+Create a new Java class named PlayerEntryActivity.java for the activity where the user can enter player details:
+
+import android.app.Activity;
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+
+public class PlayerEntryActivity extends Activity {
+    private EditText nameEditText, pointsEditText;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_player_entry);
+
+        nameEditText = findViewById(R.id.name_edittext);
+        pointsEditText = findViewById(R.id.points_edittext);
+
+        Button submitButton = findViewById(R.id.submit_button);
+        submitButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String name = nameEditText.getText().toString().trim();
+                int points = Integer.parseInt(pointsEditText.getText().toString());
+
+                Player player = new Player(name, points);
+
+                Intent intent = new Intent(PlayerEntryActivity.this, PlayerDisplayActivity.class);
+                intent.putExtra("player", player);
+                startActivity(intent);
+            }
+        });
+    }
+}
+
+
+Create a new Java class named PlayerDisplayActivity.java for the activity where the player details will be displayed:
+
+
+
+import android.app.Activity;
+import android.os.Bundle;
+import android.widget.TextView;
+
+public class PlayerDisplayActivity extends Activity {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_player_display);
+
+        TextView playerTextView = findViewById(R.id.player_textview);
+
+        Player player = getIntent().getParcelableExtra("player");
+
+        if (player != null) {
+            String playerDetails = "Name: " + player.getName() + "\nPoints: " + player.getPoints();
+            playerTextView.setText(playerDetails);
+        }
+    }
+}
+
+
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <EditText
+        android:id="@+id/name_edittext"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter player name" />
+
+    <EditText
+        android:id="@+id/points_edittext"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inputType="number"
+        android:hint="Enter player points" />
+
+    <Button
+        android:id="@+id/submit_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Submit" />
+
+</LinearLayout>
+
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/player_textview"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+</LinearLayout>
+
+
+

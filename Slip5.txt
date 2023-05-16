@@ -1,0 +1,223 @@
+A)
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+#define MSGSIZE 80
+
+int main() {
+    int fd[2], nbytes;
+    char msg1[MSGSIZE] = "Hello World";
+    char msg2[MSGSIZE] = "Hello SPPU";
+    char msg3[MSGSIZE] = "Linux is Funny";
+    char readbuffer[MSGSIZE];
+
+    if (pipe(fd) == -1) {
+        perror("pipe");
+        exit(1);
+    }
+
+    int pid = fork();
+
+    if (pid < 0) {
+        perror("fork");
+        exit(1);
+    }
+
+    if (pid == 0) { /* child process */
+        close(fd[0]);
+        write(fd[1], msg1, MSGSIZE);
+        write(fd[1], msg2, MSGSIZE);
+        write(fd[1], msg3, MSGSIZE);
+        exit(0);
+    } else { /* parent process */
+        close(fd[1]);
+        for (int i = 0; i < 3; i++) {
+            nbytes = read(fd[0], readbuffer, MSGSIZE);
+            printf("Received message %d: %s\n", i+1, readbuffer);
+        }
+    }
+
+    return 0;
+}
+
+
+
+
+B)
+
+#include"stdio.h"
+#include"stdlib.h"
+#include"dirent.h"
+#include"fcntl.h"
+#include"string.h"
+#include"sys/types.h"
+int main()
+{
+int fd,fd1,l;
+DIR *d;
+char ch;
+char new[100];
+struct dirent *de;
+printf("\n enter the file");
+scanf("%s",new);
+d=opendir(".");
+if(d==NULL)
+{
+printf("open dir unable");
+exit(0);
+}
+fd1=open(new,O_RDWR|O_CREAT,0666);
+if(fd1<0)
+{
+printf("unable open new file");
+exit(0);
+}
+while((de=readdir(d))!=NULL)
+{
+l=strlen(de->d_name);
+if(de->d_name[l-4]=='.'&& de->d_name[l-3]=='t'&& de->d_name[l-2]=='x'&& de->d_name[l-1]=='t')
+{
+fd=open(de->d_name,O_RDONLY);
+while(read(fd,&ch,1))
+write(fd1,&ch,1);
+}
+close(fd);
+}
+}
+
+
+
+
+
+A)
+
+$$activity_main.xml
+
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp"
+    tools:context=".MainActivity">
+
+    <Button
+        android:id="@+id/btn_change_image"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:onClick="changeImage"
+        android:text="Change Image" />
+
+    <ImageView
+        android:id="@+id/image_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/image1"
+        android:layout_below="@id/btn_change_image"
+        android:layout_marginTop="16dp"/>
+
+</RelativeLayout>
+
+$$MainActivity.java
+
+package com.example.program2;
+
+import androidx.appcompat.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.ImageView;
+
+public class MainActivity extends AppCompatActivity {
+
+    private ImageView imageView;
+    private boolean isImage1Displayed = true;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        imageView = findViewById(R.id.image_view);
+    }
+
+    public void changeImage(View view) {
+        if (isImage1Displayed) {
+            imageView.setImageResource(R.drawable.image2);
+            isImage1Displayed = false;
+        } else {
+            imageView.setImageResource(R.drawable.image1);
+            isImage1Displayed = true;
+        }
+    }
+}
+
+
+B)
+
+$$activity_main.xml
+
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <Switch
+        android:id="@+id/light_switch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Light Switch"
+        android:layout_centerInParent="true"/>
+
+    <ImageView
+        android:id="@+id/light_bulb"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/light_off"
+        android:layout_below="@+id/light_switch"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="24dp"/>
+
+</RelativeLayout>
+
+$$MainActivity.java
+
+package com.example.lightswitch;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.Switch;
+
+public class MainActivity extends AppCompatActivity {
+
+    private Switch lightSwitch;
+    private ImageView lightBulb;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        lightSwitch = findViewById(R.id.light_switch);
+        lightBulb = findViewById(R.id.light_bulb);
+
+        lightSwitch.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (lightSwitch.isChecked()) {
+                    lightBulb.setImageResource(R.drawable.light_on);
+                } else {
+                    lightBulb.setImageResource(R.drawable.light_off);
+                }
+            }
+        });
+    }
+}

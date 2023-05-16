@@ -1,0 +1,252 @@
+A)
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+
+int main() {
+    struct rlimit rlim;
+
+    // Get the current resource limits
+    if (getrlimit(RLIMIT_NOFILE, &rlim) == -1) {
+        perror("Error getting current resource limits");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Current file descriptor soft limit: %ld\n", rlim.rlim_cur);
+    printf("Current file descriptor hard limit: %ld\n", rlim.rlim_max);
+
+    // Set a new soft limit for the maximum number of open file descriptors
+    rlim.rlim_cur = 1000;
+    if (setrlimit(RLIMIT_NOFILE, &rlim) == -1) {
+        perror("Error setting new resource limits");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("New file descriptor soft limit: %ld\n", rlim.rlim_cur);
+    printf("New file descriptor hard limit: %ld\n", rlim.rlim_max);
+
+    // Get the current resource limits for memory usage
+    if (getrlimit(RLIMIT_DATA, &rlim) == -1) {
+        perror("Error getting current resource limits");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Current data segment soft limit: %ld\n", rlim.rlim_cur);
+    printf("Current data segment hard limit: %ld\n", rlim.rlim_max);
+
+    // Set a new soft limit for the maximum data segment size
+    rlim.rlim_cur = 1024 * 1024 * 1024;
+    if (setrlimit(RLIMIT_DATA, &rlim) == -1) {
+        perror("Error setting new resource limits");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("New data segment soft limit: %ld\n", rlim.rlim_cur);
+    printf("New data segment hard limit: %ld\n", rlim.rlim_max);
+
+    return 0;
+}
+
+
+B)
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+
+// Define a struct to store the filename and size
+struct file {
+    char* name;
+    long size;
+};
+
+// Define a compare function for sorting
+int compare(const void* a, const void* b) {
+    const struct file* fa = *(const struct file**)a;
+    const struct file* fb = *(const struct file**)b;
+    return (fa->size - fb->size);
+}
+
+int main(int argc, char* argv[]) {
+    // Check if enough command line arguments are provided
+    if (argc < 2) {
+        fprintf(stderr, "Usage: %s file1 file2 ... \n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
+
+    // Allocate memory for array of pointers to file structures
+    struct file** files = malloc(sizeof(struct file*) * argc);
+    if (files == NULL) {
+        fprintf(stderr, "Memory allocation failed\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // Get file size and name for each file
+    for (int i = 1; i < argc; i++) {
+        // Allocate memory for file structure
+        files[i - 1] = malloc(sizeof(struct file));
+        if (files[i - 1] == NULL) {
+            fprintf(stderr, "Memory allocation failed\n");
+            exit(EXIT_FAILURE);
+        }
+
+        // Get file size using stat system call
+        struct stat st;
+        if (stat(argv[i], &st) == -1) {
+            fprintf(stderr, "Error getting file size for %s\n", argv[i]);
+            exit(EXIT_FAILURE);
+        }
+        files[i - 1]->size = st.st_size;
+
+        // Copy filename to file structure
+        files[i - 1]->name = malloc(strlen(argv[i]) + 1);
+        if (files[i - 1]->name == NULL) {
+            fprintf(stderr, "Memory allocation failed\n");
+            exit(EXIT_FAILURE);
+        }
+        strcpy(files[i - 1]->name, argv[i]);
+    }
+
+    // Sort files by size
+    qsort(files, argc - 1, sizeof(struct file*), compare);
+
+    // Display filenames in ascending order according to their sizes
+    for (int i = 0; i < argc - 1; i++) {
+        printf("%ld %s\n", files[i]->size, files[i]->name);
+    }
+
+    // Free allocated memory
+    for (int i = 0; i < argc - 1; i++) {
+        free(files[i]->name);
+        free(files[i]);
+    }
+    free(files);
+
+    return 0;
+}
+
+
+
+
+A)
+$$activity_main.xml
+
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <EditText
+        android:id="@+id/numbers_edittext"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter 5 numbers separated by spaces"
+        android:inputType="number" />
+
+    <RadioGroup
+        android:id="@+id/operation_radiogroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:orientation="horizontal">
+
+        <RadioButton
+            android:id="@+id/sum_radiobutton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Sum" />
+
+        <RadioButton
+            android:id="@+id/average_radiobutton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Average" />
+    </RadioGroup>
+
+    <TextView
+        android:id="@+id/result_textview"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Result:"
+        android:textSize="18sp" />
+</LinearLayout>
+
+$$MainActivity.java
+
+package com.example.sum;
+
+import androidx.appcompat.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.EditText;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
+import android.widget.TextView;
+
+public class MainActivity extends AppCompatActivity {
+
+    private EditText numbersEditText;
+    private RadioButton sumRadioButton;
+    private RadioButton averageRadioButton;
+    private TextView resultTextView;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        numbersEditText = findViewById(R.id.numbers_edittext);
+        sumRadioButton = findViewById(R.id.sum_radiobutton);
+        averageRadioButton = findViewById(R.id.average_radiobutton);
+        resultTextView = findViewById(R.id.result_textview);
+
+        RadioGroup operationRadioGroup = findViewById(R.id.operation_radiogroup);
+        operationRadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup group, int checkedId) {
+                calculateResult();
+            }
+        });
+    }
+
+    private void calculateResult() {
+        String numbersText = numbersEditText.getText().toString();
+
+        if (numbersText.isEmpty()) {
+            resultTextView.setText("");
+            return;
+        }
+
+        String[] numbersArray = numbersText.split(" ");
+
+        if (numbersArray.length != 5) {
+            resultTextView.setText("");
+            return;
+        }
+
+        int number1 = Integer.parseInt(numbersArray[0]);
+        int number2 = Integer.parseInt(numbersArray[1]);
+        int number3 = Integer.parseInt(numbersArray[2]);
+        int number4 = Integer.parseInt(numbersArray[3]);
+        int number5 = Integer.parseInt(numbersArray[4]);
+
+        if (sumRadioButton.isChecked()) {
+            int sum = number1 + number2 + number3 + number4 + number5;
+            resultTextView.setText(String.valueOf(sum));
+        } else if (averageRadioButton.isChecked()) {
+            int average = (number1 + number2 + number3 + number4 + number5) / 5;
+            resultTextView.setText(String.valueOf(average));
+        }
+    }
+}
+
+B)

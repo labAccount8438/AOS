@@ -1,0 +1,152 @@
+A)
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <time.h>
+
+int main() {
+    char file_name[100];
+    struct stat file_info;
+
+    printf("Enter the name of the file: ");
+    scanf("%s", file_name);
+
+    if (stat(file_name, &file_info) == -1) {
+        perror("Error");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Last access time: %s", ctime(&file_info.st_atime));
+    printf("Last modified time: %s", ctime(&file_info.st_mtime));
+
+    return 0;
+}
+
+
+B)
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <signal.h>
+
+#define READ_END 0
+#define WRITE_END 1
+
+int main() {
+    int fd[2];
+    pid_t pid;
+    char *ls_args[] = {"ls", "-l", NULL};
+    char *wc_args[] = {"wc", "-l", NULL};
+
+    // Create pipe
+    if (pipe(fd) == -1) {
+        perror("Error");
+        exit(EXIT_FAILURE);
+    }
+
+    // Fork child process
+    pid = fork();
+    if (pid == -1) {
+        perror("Error");
+        exit(EXIT_FAILURE);
+    } else if (pid == 0) {
+        // Child process
+        // Redirect stdout to write end of pipe
+        close(fd[READ_END]);
+        dup2(fd[WRITE_END], STDOUT_FILENO);
+        close(fd[WRITE_END]);
+
+        // Execute ls command
+        execvp(ls_args[0], ls_args);
+        perror("Error");
+        exit(EXIT_FAILURE);
+    } else {
+        // Parent process
+        // Wait for child process to complete
+        wait(NULL);
+
+        // Redirect stdin to read end of pipe
+        close(fd[WRITE_END]);
+        dup2(fd[READ_END], STDIN_FILENO);
+        close(fd[READ_END]);
+
+        // Execute wc command
+        execvp(wc_args[0], wc_args);
+        perror("Error");
+        exit(EXIT_FAILURE);
+    }
+
+    return 0;
+}
+
+
+
+
+A)
+
+activity_main.xml
+
+<Button
+    android:id="@+id/btnDatePicker"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Select Date" />
+
+
+Main_activity.java
+
+import androidx.appcompat.app.AppCompatActivity;
+import android.app.DatePickerDialog;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.DatePicker;
+import android.widget.Toast;
+
+import java.util.Calendar;
+
+public class MainActivity extends AppCompatActivity {
+
+    private Button btnDatePicker;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        btnDatePicker = findViewById(R.id.btnDatePicker);
+
+        btnDatePicker.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showDatePickerDialog();
+            }
+        });
+    }
+
+    private void showDatePickerDialog() {
+        // Get the current date
+        Calendar calendar = Calendar.getInstance();
+        int year = calendar.get(Calendar.YEAR);
+        int month = calendar.get(Calendar.MONTH);
+        int dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH);
+
+        // Create a date picker dialog
+        DatePickerDialog datePickerDialog = new DatePickerDialog(MainActivity.this,
+                new DatePickerDialog.OnDateSetListener() {
+                    @Override
+                    public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
+                        // Process the selected date
+                        String selectedDate = dayOfMonth + "/" + (monthOfYear + 1) + "/" + year;
+                        Toast.makeText(MainActivity.this, "Selected Date: " + selectedDate, Toast.LENGTH_SHORT).show();
+                    }
+                }, year, month, dayOfMonth);
+
+        // Show the date picker dialog
+        datePickerDialog.show();
+    }
+}
+

@@ -1,0 +1,154 @@
+A}
+
+#include <stdio.h>
+#include <malloc.h>
+
+int main() {
+    struct mallinfo mi = mallinfo();
+
+    printf("Total non-mmapped bytes (arena):       %d\n", mi.arena);
+    printf("# of free chunks (ordblks):            %d\n", mi.ordblks);
+    printf("# of free fastbin blocks (smblks):     %d\n", mi.smblks);
+    printf("# of mapped regions (hblks):           %d\n", mi.hblks);
+    printf("Bytes in mapped regions (hblkhd):      %d\n", mi.hblkhd);
+    printf("Max. total allocated space (usmblks):  %d\n", mi.usmblks);
+    printf("Free bytes held in fastbins (fsmblks): %d\n", mi.fsmblks);
+    printf("Total allocated space (uordblks):      %d\n", mi.uordblks);
+    printf("Total free space (fordblks):           %d\n", mi.fordblks);
+    printf("Topmost releasable block (keepcost):   %d\n", mi.keepcost);
+
+    return 0;
+}
+
+
+B)
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdio.h>
+
+int main()
+{
+    mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+    // create file1 with read/write permissions for owner, group, and others
+    int fd1 = open("file1", O_CREAT | O_RDWR, mode);
+    if (fd1 == -1) {
+        perror("open");
+        return 1;
+    }
+
+    // create file2 with read/write permissions for owner only
+    mode_t um = umask(0); // get the umask value
+    mode_t mode2 = S_IRUSR | S_IWUSR;
+    int fd2 = open("file2", O_CREAT | O_RDWR, mode2);
+    if (fd2 == -1) {
+        perror("open");
+        return 1;
+    }
+    umask(um); // restore the umask value
+
+    // turn on set-group-id and turn off group execute permission of file1
+    if (chmod("file1", mode | S_ISGID | S_IXGRP) == -1) {
+        perror("chmod");
+        return 1;
+    }
+
+    // set read permission to all users for file2
+    if (chmod("file2", mode2 | S_IRGRP | S_IROTH) == -1) {
+        perror("chmod");
+        return 1;
+    }
+
+    printf("File permissions have been modified successfully.\n");
+
+    close(fd1);
+    close(fd2);
+    return 0;
+}
+
+
+
+B)
+
+$$activity_main.xml
+
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".MainActivity">
+    <ImageSwitcher
+        android:layout_width="match_parent"
+        android:layout_height="500dp"
+        android:id="@+id/is"
+        tools:ignore="MissingConstraints" />
+    <Button
+        android:id="@+id/bt"
+        android:layout_width="100dp"
+        android:layout_height="75dp"
+        android:text="img slider"/>
+</LinearLayout>
+
+$$MainActivity.java
+
+package com.example.program2;
+
+import androidx.appcompat.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.animation.Animation;
+
+import android.view.animation.AnimationUtils;
+import android.widget.Button;
+import android.widget.ImageSwitcher;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.Toast;
+import android.widget.ViewSwitcher;
+public class MainActivity extends AppCompatActivity {
+    private ImageSwitcher is;
+    int imgs[]={R.drawable.image1, R.drawable.image2,R.drawable.image3};
+    int cnt=imgs.length;
+    int currindex=-1;
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        ImageSwitcher is=(ImageSwitcher) findViewById(R.id.is);
+        Button bt=(Button) findViewById(R.id.bt);
+        is.setFactory(new ViewSwitcher.ViewFactory() {
+            @Override
+            public View makeView() {
+                ImageView iv=new ImageView(getApplicationContext());
+                iv.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                iv.setLayoutParams(new
+                        ImageSwitcher.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT));
+                return iv;
+            }
+        });
+        Animation in=
+                AnimationUtils.loadAnimation(this,android.R.anim.slide_in_left);
+        Animation out=
+                AnimationUtils.loadAnimation(this,android.R.anim.slide_out_right);
+        is.setInAnimation(in);
+
+        is.setInAnimation(out);
+        bt.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                currindex++;
+                if(currindex==cnt)
+                    currindex=0;
+                is.setImageResource(imgs[currindex]);
+            }
+        });
+    }
+}
+
